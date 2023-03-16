@@ -1,22 +1,44 @@
 import Hotel from "../models/hotel.schema.js";
-import fs from "fs";
-import { parse } from "csv-parse";
 
-export const createHotel = async (req, res) => {
-	console.log(req.body);
-	const hotel = new Hotel(req.body);
-	await hotel
-		.save()
-		.then(() => {
-			res.status(201).json(hotel);
-		})
-		.catch((error) => {
-			res.status(400).json({ error: error });
-		});
-	// const hotel = new Hotel(req.body);
-	// await hotel.save();
-};
 
+
+export const getCities=async(req,res,next)=>{
+    try{
+        const Cities=await Hotel.distinct("city");
+        res.status(200).json(Cities);
+    }catch(e){
+        console.error(e);
+        res.status(500).send("internal sever error")
+    }
+}
+
+export const getEverything=async(req,res,next)=>{
+    try{
+       const Cities=await Hotel.distinct("city");
+       const Hotels=await Hotel.find();
+       var every=[]
+       Cities.forEach(element=>
+        {const pl=[];
+        Hotels.forEach(ele=>
+            {
+				if(ele.city==element){
+				console.log(ele.city)
+                pl.push(ele)
+            }}
+        )
+        every.push({
+            city: element,
+            hotels: pl
+        })
+       })
+       res.status(200).json(every)
+    }
+       
+    catch(e){
+        console.error(e);
+        res.status(500).send("internal sever error")
+    }
+}
 export const readHotels = async (req, res) => {
 	const data = [];
 	await fs
