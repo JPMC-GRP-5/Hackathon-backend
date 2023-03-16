@@ -2,7 +2,7 @@ import fs from "fs";
 import { parse } from "csv-parse";
 import Places from "../models/places.schema.js";
 import Geo from "geo-nearby";
-
+import createCompletionChatGTP from "./openAI.js"; 
 export const readPlaces = async (req, res) => {
 	const data = [];
 	await fs
@@ -68,3 +68,15 @@ export const getPlaces = async (req, res) => {
 
 	return res.status(200).json(nearbyPlaces);
 };
+
+
+export const getInfo= async (req, res) => {
+try{
+		const location =req.params.location;
+		const response=await createCompletionChatGTP(location);
+		res.status(200).send(response);
+}catch(e){
+	console.log(e);
+	res.status(500).send("Internal server error")
+}
+}
