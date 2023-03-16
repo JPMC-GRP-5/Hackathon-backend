@@ -5,6 +5,8 @@ const router = Router();
 
 router.post("/create", HotelController.createHotel);
 
-router.get("/", HotelController.readHotels);
+router.get("/read", HotelController.readHotels);
+
+router.get("/:city", HotelController.getHotelsByCity);
 
 export default router;
