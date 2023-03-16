@@ -22,21 +22,28 @@ export const readHotels = async (req, res) => {
 	await fs
 		.createReadStream("src/utils/hotels.data.csv")
 		.pipe(parse({ delimiter: ",", columns: true, ltrim: true }))
-		.on("data", (row) => {
+		.on("data", (row, index) => {
 			data.push({
-				name: row.Name,
-				address: row.Address,
-				latitude: parseFloat(row.Latitude),
-				longitude: parseFloat(row.Longitude),
-				rooms: parseInt(row.Rooms),
-				cost: parseInt(row.Price),
-				rating: parseInt(row.Rating),
+				name: row.property_name,
+				latitude: parseFloat(row.latitude),
+				longitude: parseFloat(row.longitude),
+				siteUrl: row.pageurl,
+				rating: parseFloat(row.site_review_rating),
+				city: row.city.toLowerCase(),
 			});
+			// if (typeof parseFloat(row.site_review_rating) !== "number")
+			// 	console.log(index);
 		})
 		.on("end", async () => {
 			console.log("CSV file successfully processed");
-			console.log(data);
 			await Hotel.insertMany(data);
 			return res.status(200).json(data);
 		});
+};
+
+export const getHotelsByCity = async (req, res) => {
+	const { city } = req.params;
+	console.log(city);
+	const hotels = await Hotel.find({ city: city });
+	return res.status(200).json(hotels);
 };
