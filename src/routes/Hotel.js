@@ -1,10 +1,10 @@
-import { Router } from "express";
+import express from "express"; 
 import * as HotelController from "../controllers/Hotel.js";
 
-const router = Router();
+const router = express.Router();
 
-router.post("/create", HotelController.createHotel);
-
-router.get("/", HotelController.readHotels);
+router.get("/",HotelController.getEverything);
+router.get("/city",HotelController.getCities)
+router.get("/request/:city",HotelController.getHotelsByCity)
 
 export default router;

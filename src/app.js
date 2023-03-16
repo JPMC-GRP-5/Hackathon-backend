@@ -5,7 +5,8 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import UserRouter from "./routes/User.js";
 import HotelRouter from "./routes/Hotel.js";
-
+import Iternary from './routes/Iternary.js'
+import CitiesRouter from './routes/Cities.js'
 const PORT = process.env.PORT || 8081;
 
 const app = express();
@@ -24,3 +25,5 @@ app.use(bodyParser.json());
 
 app.use("/users", UserRouter);
 app.use("/hotels", HotelRouter);
+app.use("/iternary",Iternary);
+app.use("/cities",CitiesRouter)

@@ -1,23 +1,20 @@
-import Hotel from "../models/hotel.schema.js";
+import Place from "../models/place.schema.js"
 
-export const getHotelsByCity=async (req,res,next)=>{
+export const getPlacesByCity=async (req,res,next)=>{
     try{
         if(!req.params.city) {
             res.status(400).send("Enter the city name")
         }
-		const city=req.params.city;
-		console.log(city)
-        const HotelsByCity=await Hotel.find({city: city});
-        res.status(200).json(HotelsByCity);
+        const placesByCity=await Place.find({"city": req.params.city});
+        res.status(200).json(placesByCity);
     }catch(e){
         console.error(e);
         res.status(500).send("internal sever error")
     }
 }
-
 export const getCities=async(req,res,next)=>{
     try{
-        const Cities=await Hotel.distinct("city");
+        const Cities=await Place.distinct("city");
         res.status(200).json(Cities);
     }catch(e){
         console.error(e);
@@ -27,22 +24,21 @@ export const getCities=async(req,res,next)=>{
 
 export const getEverything=async(req,res,next)=>{
     try{
-       const Cities=await Hotel.distinct("city");
-       const Hotels=await Hotel.find();
+       const Cities=await Place.distinct("city");
+       const Places=await Place.find();
        var every=[]
        Cities.forEach(element=>
         {const pl=[];
-        Hotels.forEach(ele=>
-            {
-				if(ele.city==element){
-				console.log(ele.city)
+        Places.forEach(ele=>
+            {if(ele.city==element){
                 pl.push(ele)
             }}
         )
         every.push({
             city: element,
-            hotels: pl
+            places: pl
         })
+
        })
        res.status(200).json(every)
     }
