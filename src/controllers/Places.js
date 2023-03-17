@@ -29,9 +29,11 @@ export const readPlaces = async (req, res) => {
 };
 
 export const getPlaces = async (req, res) => {
-	const { city, budget } = req.query;
+	const { city, budget, days } = req.query;
 	let totalCost = budget;
 	const places = await Places.find({ city: city });
+	const maxPerDay = Math.ceil(places.length / parseInt(days));
+	console.log(maxPerDay);
 	places.sort((a, b) => b.rating - a.rating);
 	if (places.length === 0) {
 		return res.status(404).json({ message: "No places found" });
@@ -46,6 +48,9 @@ export const getPlaces = async (req, res) => {
 		if (placesSet.has(data[i][2]) || places[i].entryFee > totalCost) {
 			continue;
 		}
+		if (nearbyPlaces.length === parseInt(days)) {
+			break;
+		}
 		let cost = places[i].entryFee;
 		totalCost -= places[i].entryFee;
 		placesSet.add(data[i][2]);
@@ -59,7 +64,7 @@ export const getPlaces = async (req, res) => {
 			if (
 				!placesSet.has(nearby[j].i) &&
 				places[nearby[j].i].entryFee <= totalCost &&
-				nearbyArray.length < 3
+				nearbyArray.length < maxPerDay
 			) {
 				placesSet.add(nearby[j].i);
 				nearbyArray.push(places[nearby[j].i]);
@@ -72,6 +77,8 @@ export const getPlaces = async (req, res) => {
 			cost: cost,
 		});
 	}
+
+	nearbyPlaces.slice(0, days);
 
 	return res.status(200).json({
 		nearbyPlaces: nearbyPlaces,
