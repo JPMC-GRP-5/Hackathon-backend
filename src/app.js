@@ -9,7 +9,6 @@ import Iternary from './routes/Iternary.js'
 import CitiesRouter from './routes/Cities.js'
 import PlaceRouter from "./routes/Places.js";
 
-const PORT = process.env.PORT || 8081;
 
 const app = express();
 
@@ -28,3 +27,4 @@ app.use(bodyParser.json());
 app.use("/users", UserRouter);
 app.use("/hotels", HotelRouter);
 app.use("/places", PlaceRouter);
+app.use("/city",CitiesRouter);

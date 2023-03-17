@@ -1,5 +1,7 @@
 import placeSchema from "../models/places.schema.js";
 import Place from "../models/places.schema.js";
+import redis from './redis'
+
 function sliceIntoChunks(arr, chunkSize, budget) {
 	const res = [];
 	var day = 1;
@@ -33,6 +35,12 @@ export const generateIternary = async (req, res, next) => {
 		if (!req.body.city) {
 			res.status(400).send("Enter the city name");
 		}
+		redis.get(city, (err, res) => {
+			if(err) throw err;
+			if(data!=null) {
+				res.send(data);
+			}
+		})
 		const placesByCity = await Place.find({ city: req.body.city });
 		const days = req.body.days;
 		if (!days) {
