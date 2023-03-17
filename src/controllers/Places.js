@@ -55,10 +55,11 @@ export const getPlaces = async (req, res) => {
 		const geo = new Geo(dataSet, { sorted: true });
 		const nearby = geo.nearBy(lat, lon, 3000);
 		console.log(nearby);
-		for (let j = 0; j < (nearby.length <= 2 ? nearby.length : 2); j++) {
+		for (let j = 0; j < nearby.length; j++) {
 			if (
 				!placesSet.has(nearby[j].i) &&
-				places[nearby[j].i].entryFee <= totalCost
+				places[nearby[j].i].entryFee <= totalCost &&
+				nearbyArray.length < 3
 			) {
 				placesSet.add(nearby[j].i);
 				nearbyArray.push(places[nearby[j].i]);
