@@ -29,7 +29,8 @@ export const readPlaces = async (req, res) => {
 };
 
 export const getPlaces = async (req, res) => {
-	const { city } = req.query;
+	const { city, budget } = req.query;
+	let totalCost = budget;
 	const places = await Places.find({ city: city });
 	places.sort((a, b) => b.rating - a.rating);
 	if (places.length === 0) {
@@ -42,10 +43,11 @@ export const getPlaces = async (req, res) => {
 	const nearbyPlaces = [];
 	for (let i = 0; i < data.length; i++) {
 		const nearbyArray = [places[i]];
-		let cost = 0;
-		if (placesSet.has(data[i][2])) {
+		if (placesSet.has(data[i][2]) || places[i].entryFee > totalCost) {
 			continue;
 		}
+		let cost = places[i].entryFee;
+		totalCost -= places[i].entryFee;
 		placesSet.add(data[i][2]);
 		const lat = data[i][0];
 		const lon = data[i][1];
@@ -53,11 +55,15 @@ export const getPlaces = async (req, res) => {
 		const geo = new Geo(dataSet, { sorted: true });
 		const nearby = geo.nearBy(lat, lon, 3000);
 		console.log(nearby);
-		for (let j = 0; j < (nearby.length <= 3 ? nearby.length : 3); j++) {
-			if (!placesSet.has(nearby[j].i)) {
+		for (let j = 0; j < (nearby.length <= 2 ? nearby.length : 2); j++) {
+			if (
+				!placesSet.has(nearby[j].i) &&
+				places[nearby[j].i].entryFee <= totalCost
+			) {
 				placesSet.add(nearby[j].i);
 				nearbyArray.push(places[nearby[j].i]);
 				cost += places[nearby[j].i].entryFee;
+				totalCost -= places[nearby[j].i].entryFee;
 			}
 		}
 		nearbyPlaces.push({
@@ -66,7 +72,10 @@ export const getPlaces = async (req, res) => {
 		});
 	}
 
-	return res.status(200).json(nearbyPlaces);
+	return res.status(200).json({
+		nearbyPlaces: nearbyPlaces,
+		totalCost: budget - totalCost,
+	});
 };
 
 export const setDescription = async (req, res) => {
