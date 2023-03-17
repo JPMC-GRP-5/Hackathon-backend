@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get("/", HotelController.getEverything);
 router.get("/city", HotelController.getCities);
+router.get("/nearby", HotelController.getNearbyHotels);
 // router.post("/create", HotelController.createHotel);
 
 // router.get("/read", HotelController.readHotels);

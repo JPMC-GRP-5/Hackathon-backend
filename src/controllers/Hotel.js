@@ -26,6 +26,22 @@ export const getCities = async (req, res, next) => {
 	}
 };
 
+export const getNearbyHotels = async (req, res) => {
+	const { latitude, longitude } = req.query;
+	const hotels = await Hotel.find();
+	const data = hotels.map((hotel, index) => {
+		return [hotel.latitude, hotel.longitude, index];
+	});
+	const dataset = Geo.createCompactSet(data);
+	const geo = new Geo(dataset, { sorted: true });
+	const nearby = geo.nearBy(latitude, longitude, 3000);
+	const nearbyPlaces = [];
+	for (let i = 0; i < nearby.length; i++) {
+		nearbyPlaces.push(hotels[nearby[i].i]);
+	}
+	return res.status(200).json(nearbyPlaces);
+};
+
 export const getEverything = async (req, res, next) => {
 	try {
 		const Cities = await Hotel.distinct("city");

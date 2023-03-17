@@ -73,11 +73,30 @@ export const setDescription = async (req, res) => {
 	const places = await Places.find();
 	for (let i = 0; i < places.length; i++) {
 		const place = places[i];
-		const description = await createCompletionChatGTP(place.name);
+		console.log(place.name);
+		const description = await createCompletionChatGTP(
+			place.name + ", " + place.city
+		);
 		place.description = description;
 		await place.save();
 	}
 	return res.status(200).json(places);
+};
+
+export const getNearbyPlaces = async (req, res) => {
+	const { latitude, longitude } = req.query;
+	const places = await Places.find();
+	const data = places.map((place, index) => {
+		return [place.latitude, place.longitude, index];
+	});
+	const dataset = Geo.createCompactSet(data);
+	const geo = new Geo(dataset, { sorted: true });
+	const nearby = geo.nearBy(latitude, longitude, 3000);
+	const nearbyPlaces = [];
+	for (let i = 0; i < nearby.length; i++) {
+		nearbyPlaces.push(places[nearby[i].i]);
+	}
+	return res.status(200).json(nearbyPlaces);
 };
 
 export const getInfo = async (req, res) => {
