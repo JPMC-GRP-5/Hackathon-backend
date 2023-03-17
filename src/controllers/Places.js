@@ -69,13 +69,28 @@ export const getPlaces = async (req, res) => {
 	return res.status(200).json(nearbyPlaces);
 };
 
-export const getInfo = async (req, res) => {
-	try {
-		const location = req.params.location;
-		const response = await createCompletionChatGTP(location);
-		res.status(200).send(response);
-	} catch (e) {
-		console.log(e);
-		res.status(500).send("Internal server error");
+export const setDescription = async (req, res) => {
+	const places = await Places.find();
+	for (let i = 0; i < places.length; i++) {
+		const place = places[i];
+		const description = await createCompletionChatGTP(place.name);
+		place.description = description;
+		await place.save();
 	}
+	return res.status(200).json(places);
+};
+
+export const getInfo = async (req, res) => {
+	// try {
+	// 	const location = req.params.location;
+	// 	const response = await createCompletionChatGTP(location);
+	// 	res.status(200).send(response);
+	// } catch (e) {
+	// 	console.log(e);
+	// 	res.status(500).send("Internal server error");
+	// }
+	const { location } = req.params;
+	console.log(location);
+	const response = await createCompletionChatGTP(location);
+	return res.status(200).send(response);
 };
