@@ -1,4 +1,20 @@
 import Hotel from "../models/hotel.schema.js";
+import fs from "fs";
+import { parse } from "csv-parse";
+import Places from "../models/places.schema.js";
+import Geo from "geo-nearby";
+
+const cities = [
+	"mumbai",
+	"jaipur",
+	"chennai",
+	"delhi",
+	"kochi",
+	"kolkata",
+	"manali",
+	"mysore",
+	"panaji",
+];
 
 export const getCities = async (req, res, next) => {
 	try {
@@ -8,6 +24,22 @@ export const getCities = async (req, res, next) => {
 		console.error(e);
 		res.status(500).send("internal sever error");
 	}
+};
+
+export const getNearbyHotels = async (req, res) => {
+	const { latitude, longitude } = req.query;
+	const hotels = await Hotel.find();
+	const data = hotels.map((hotel, index) => {
+		return [hotel.latitude, hotel.longitude, index];
+	});
+	const dataset = Geo.createCompactSet(data);
+	const geo = new Geo(dataset, { sorted: true });
+	const nearby = geo.nearBy(latitude, longitude, 3000);
+	const nearbyPlaces = [];
+	for (let i = 0; i < nearby.length; i++) {
+		nearbyPlaces.push(hotels[nearby[i].i]);
+	}
+	return res.status(200).json(nearbyPlaces);
 };
 
 export const getEverything = async (req, res, next) => {
@@ -40,14 +72,16 @@ export const readHotels = async (req, res) => {
 		.createReadStream("src/utils/hotels.data.csv")
 		.pipe(parse({ delimiter: ",", columns: true, ltrim: true }))
 		.on("data", (row, index) => {
-			data.push({
-				name: row.property_name,
-				latitude: parseFloat(row.latitude),
-				longitude: parseFloat(row.longitude),
-				siteUrl: row.pageurl,
-				rating: parseFloat(row.site_review_rating),
-				city: row.city.toLowerCase(),
-			});
+			if (cities.includes(row.city.toLowerCase())) {
+				data.push({
+					name: row.property_name,
+					latitude: parseFloat(row.latitude),
+					longitude: parseFloat(row.longitude),
+					siteUrl: row.pageurl,
+					rating: parseFloat(row.site_review_rating),
+					city: row.city.toLowerCase(),
+				});
+			}
 			// if (typeof parseFloat(row.site_review_rating) !== "number")
 			// 	console.log(index);
 		})

@@ -2,7 +2,7 @@ import fs from "fs";
 import { parse } from "csv-parse";
 import Places from "../models/places.schema.js";
 import Geo from "geo-nearby";
-import createCompletionChatGTP from "./openAI.js"; 
+import createCompletionChatGTP from "./openAI.js";
 export const readPlaces = async (req, res) => {
 	const data = [];
 	await fs
@@ -29,8 +29,11 @@ export const readPlaces = async (req, res) => {
 };
 
 export const getPlaces = async (req, res) => {
-	const { city } = req.query;
+	const { city, budget, days } = req.query;
+	let totalCost = budget;
 	const places = await Places.find({ city: city });
+	const maxPerDay = Math.ceil(places.length / parseInt(days));
+	console.log(maxPerDay);
 	places.sort((a, b) => b.rating - a.rating);
 	if (places.length === 0) {
 		return res.status(404).json({ message: "No places found" });
@@ -42,10 +45,14 @@ export const getPlaces = async (req, res) => {
 	const nearbyPlaces = [];
 	for (let i = 0; i < data.length; i++) {
 		const nearbyArray = [places[i]];
-		let cost = 0;
-		if (placesSet.has(data[i][2])) {
+		if (placesSet.has(data[i][2]) || places[i].entryFee > totalCost) {
 			continue;
 		}
+		if (nearbyPlaces.length === parseInt(days)) {
+			break;
+		}
+		let cost = places[i].entryFee;
+		totalCost -= places[i].entryFee;
 		placesSet.add(data[i][2]);
 		const lat = data[i][0];
 		const lon = data[i][1];
@@ -53,11 +60,16 @@ export const getPlaces = async (req, res) => {
 		const geo = new Geo(dataSet, { sorted: true });
 		const nearby = geo.nearBy(lat, lon, 3000);
 		console.log(nearby);
-		for (let j = 0; j < (nearby.length <= 3 ? nearby.length : 3); j++) {
-			if (!placesSet.has(nearby[j].i)) {
+		for (let j = 0; j < nearby.length; j++) {
+			if (
+				!placesSet.has(nearby[j].i) &&
+				places[nearby[j].i].entryFee <= totalCost &&
+				nearbyArray.length < maxPerDay
+			) {
 				placesSet.add(nearby[j].i);
 				nearbyArray.push(places[nearby[j].i]);
 				cost += places[nearby[j].i].entryFee;
+				totalCost -= places[nearby[j].i].entryFee;
 			}
 		}
 		nearbyPlaces.push({
@@ -66,17 +78,55 @@ export const getPlaces = async (req, res) => {
 		});
 	}
 
+	nearbyPlaces.slice(0, days);
+
+	return res.status(200).json({
+		nearbyPlaces: nearbyPlaces,
+		totalCost: budget - totalCost,
+	});
+};
+
+export const setDescription = async (req, res) => {
+	const places = await Places.find();
+	for (let i = 0; i < places.length; i++) {
+		const place = places[i];
+		console.log(place.name);
+		const description = await createCompletionChatGTP(
+			place.name + ", " + place.city
+		);
+		place.description = description;
+		await place.save();
+	}
+	return res.status(200).json(places);
+};
+
+export const getNearbyPlaces = async (req, res) => {
+	const { latitude, longitude } = req.query;
+	const places = await Places.find();
+	const data = places.map((place, index) => {
+		return [place.latitude, place.longitude, index];
+	});
+	const dataset = Geo.createCompactSet(data);
+	const geo = new Geo(dataset, { sorted: true });
+	const nearby = geo.nearBy(latitude, longitude, 3000);
+	const nearbyPlaces = [];
+	for (let i = 0; i < nearby.length; i++) {
+		nearbyPlaces.push(places[nearby[i].i]);
+	}
 	return res.status(200).json(nearbyPlaces);
 };
 
-
-export const getInfo= async (req, res) => {
-try{
-		const location =req.params.location;
-		const response=await createCompletionChatGTP(location);
-		res.status(200).send(response);
-}catch(e){
-	console.log(e);
-	res.status(500).send("Internal server error")
-}
-}
+export const getInfo = async (req, res) => {
+	// try {
+	// 	const location = req.params.location;
+	// 	const response = await createCompletionChatGTP(location);
+	// 	res.status(200).send(response);
+	// } catch (e) {
+	// 	console.log(e);
+	// 	res.status(500).send("Internal server error");
+	// }
+	const { location } = req.params;
+	console.log(location);
+	const response = await createCompletionChatGTP(location);
+	return res.status(200).send(response);
+};
