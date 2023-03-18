@@ -1,6 +1,6 @@
 import placeSchema from "../models/places.schema.js";
 import Place from "../models/places.schema.js";
-import redis from './redis'
+import redis from '../redis.js'
 
 function sliceIntoChunks(arr, chunkSize, budget) {
 	const res = [];

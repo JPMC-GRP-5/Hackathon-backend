@@ -1,0 +1,20 @@
+version: '3.9'
+services:
+  redis:
+    image: 'redis:alpine'
+    
+  node:
+    restart: on-failure
+    build: ./server
+    links:
+      - "redis:db"
+    depends_on:
+      - redis
+  nginx:
+    build: './nginx'
+    links:
+      - "node:node"
+    ports:
+      - '80:80'
+    depends_on:
+      - node
