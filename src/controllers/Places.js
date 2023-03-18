@@ -29,11 +29,13 @@ export const readPlaces = async (req, res) => {
 };
 
 export const getPlaces = async (req, res) => {
-	const { city, budget, days } = req.query;
+	const { city, budget, days, noOfPeople } = req.query;
 	let totalCost = budget;
 	const places = await Places.find({ city: city });
 	const maxPerDay = Math.ceil(places.length / parseInt(days));
 	console.log(maxPerDay);
+	const foodCost = parseInt(noOfPeople) * parseInt(days) * 500;
+	totalCost -= foodCost;
 	places.sort((a, b) => b.rating - a.rating);
 	if (places.length === 0) {
 		return res.status(404).json({ message: "No places found" });
@@ -83,6 +85,7 @@ export const getPlaces = async (req, res) => {
 	return res.status(200).json({
 		nearbyPlaces: nearbyPlaces,
 		totalCost: budget - totalCost,
+		foodCost: foodCost,
 	});
 };
 
